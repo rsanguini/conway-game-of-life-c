@@ -179,7 +179,6 @@ Essa organização facilitará a manutenção, a leitura do código e a criaçã
                |                             |
                v                             v
        Operações do Tabuleiro          Lógica do Jogo
-         tabuleiro.c                    logica.c
                |                             |
                v                             v
        Inicialização, cópia,         Contagem de vizinhos
@@ -204,13 +203,9 @@ jogo-da-vida-conway/
 │
 ├── src/
 │   ├── main.c
-│   ├── tabuleiro.c
-│   └── logica.c
+│   └── jogo.exe
 │
-├── include/
-│   ├── tabuleiro.h
-│   └── logica.h
-│
+├── LICENSE
 ├── README.md
 └── .gitignore
 ```
@@ -220,10 +215,8 @@ jogo-da-vida-conway/
 | Arquivo | Responsabilidade |
 |---|---|
 | `main.c` | Controlar o fluxo principal e a interação com o usuário |
-| `tabuleiro.c` | Inicializar, imprimir, copiar e contar células |
-| `logica.c` | Calcular vizinhos e simular novas gerações |
-| `tabuleiro.h` | Declarar as funções relacionadas ao tabuleiro |
-| `logica.h` | Declarar as funções relacionadas às regras do jogo |
+| `jogo.exe` | Roda o jogo no terminal |
+| `LICENSE` | Define os termos de utilização e distribuição do código, caso a licença MIT seja incluída. |
 | `README.md` | Documentar o projeto |
 | `.gitignore` | Ignorar arquivos gerados e configurações locais |
 
@@ -264,6 +257,14 @@ gcc -Iinclude src/main.c src/tabuleiro.c src/logica.c -o jogo-da-vida
 
 Esse comando é uma referência para a estrutura modular planejada. Ele não deve ser considerado validado até que os arquivos estejam separados e o programa seja compilado com sucesso.
 
+### Compilação pelo arquivo "jogo.exe"
+
+Entre na pasta src/ dentro do repositório, clique no arquivo jogo.exe, no canto superior direito você clicará nos três pontinhos e depois em download. Basta escolher onde baixar o arquivo no seu computador e dar um duplo clique nele.
+
+```bash
+src/  ->  jogo.exe  ->  Três pontinhos  -> Download  ->  Escolhe onde baixar  ->  Duplo clique no arquivo  ->  Aproeitar o jogo
+``` 
+
 ---
 
 # Limitações Conhecidas
@@ -286,16 +287,6 @@ Esses pontos representam oportunidades de melhoria e fazem parte da evolução d
 # Roadmap
 
 O desenvolvimento será realizado em etapas, priorizando a preservação do código original e a introdução gradual de boas práticas.
-
-## Etapas iniciais
-
-- [x] Implementação original das regras de Conway.
-- [x] Inicialização aleatória do tabuleiro.
-- [x] Simulação de gerações.
-- [x] Funções para contar células e vizinhos.
-- [ ] Documentação do projeto no GitHub.
-- [ ] Organização dos arquivos do repositório.
-- [ ] Configuração do `.gitignore`.
 
 ## Melhorias planejadas
 
