@@ -7,26 +7,12 @@
 #define TAMANHO 10
 
 void exibirMenuInicial(void) {
-    printf("\n");
-    printf("\t\t========================================\n");
-    printf("\t\t       JOGO DA VIDA DE CONWAY\n");
-    printf("\t\t========================================\n");
-
-    printf("\n\t\tComo funciona o jogo?\n\n");
-    printf("\t\tO Jogo da Vida de Conway e um automato\n");
-    printf("\t\tcelular que simula a evolucao de celulas\n");
-    printf("\t\tvivas e mortas em um tabuleiro.\n\n");
-
-    printf("\t\tCada celula muda de estado conforme\n");
-    printf("\t\tas regras e a quantidade de vizinhos.\n");
-
-    printf("\n\t\t========================================\n");
-    printf("\t\t             MENU PRINCIPAL\n");
-    printf("\t\t========================================\n");
-
-    printf("\n\t\t[1] Iniciar jogo");
-    printf("\n\t\t[0] Sair");
-    printf("\n\n\t\tEscolha uma opcao: ");
+    printf("\n========================================\n");
+    printf("       JOGO DA VIDA DE CONWAY\n");
+    printf("========================================\n");
+    printf("\n[1] Iniciar jogo\n");
+    printf("[0] Sair\n");
+    printf("\nEscolha uma opcao: ");
 }
 
 void inicializarTabuleiro(int tabuleiro[TAMANHO][TAMANHO]) {
@@ -37,30 +23,79 @@ void inicializarTabuleiro(int tabuleiro[TAMANHO][TAMANHO]) {
     }
 }
 
+void imprimirTabuleiro(int tabuleiro[TAMANHO][TAMANHO],
+                       int geracao) {
+    printf("\n=== GERACAO %d ===\n\n", geracao);
+
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            printf("%c ", tabuleiro[i][j] ? 'V' : '-');
+        }
+        printf("\n");
+    }
+}
+
+int contarVizinhos(int tabuleiro[TAMANHO][TAMANHO],
+                   int linha, int coluna) {
+    int vivos = 0;
+
+    for (int i = linha - 1; i <= linha + 1; i++) {
+        for (int j = coluna - 1; j <= coluna + 1; j++) {
+            if (i == linha && j == coluna) {
+                continue;
+            }
+
+            if (i >= 0 && i < TAMANHO &&
+                j >= 0 && j < TAMANHO) {
+                vivos += tabuleiro[i][j];
+            }
+        }
+    }
+
+    return vivos;
+}
+
+void simularGeracao(int atual[TAMANHO][TAMANHO],
+                    int proxima[TAMANHO][TAMANHO]) {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            int vizinhos = contarVizinhos(atual, i, j);
+
+            if (atual[i][j] == 1) {
+                proxima[i][j] =
+                    (vizinhos == 2 || vizinhos == 3) ? 1 : 0;
+            } else {
+                proxima[i][j] = (vizinhos == 3) ? 1 : 0;
+            }
+        }
+    }
+}
+
 int main(void) {
     setlocale(LC_ALL, "");
+    srand((unsigned int) time(NULL));
 
     int opcao;
+    int tabuleiro[TAMANHO][TAMANHO];
+    int proxima[TAMANHO][TAMANHO];
 
     exibirMenuInicial();
 
     if (scanf("%d", &opcao) != 1) {
-        printf("\nEntrada invalida.\n");
+        printf("Entrada invalida.\n");
         return 1;
     }
 
     if (opcao == 1) {
-        srand((unsigned int) time(NULL));
-
-        int tabuleiro[TAMANHO][TAMANHO];
-
         inicializarTabuleiro(tabuleiro);
+        imprimirTabuleiro(tabuleiro, 0);
 
-        printf("\nTabuleiro inicializado com sucesso!\n");
+        simularGeracao(tabuleiro, proxima);
+        imprimirTabuleiro(proxima, 1);
     } else if (opcao == 0) {
-        printf("\nObrigado por conhecer o Jogo da Vida de Conway!\n");
+        printf("Obrigado por jogar!\n");
     } else {
-        printf("\nOpcao invalida.\n");
+        printf("Opcao invalida.\n");
     }
 
     return 0;
