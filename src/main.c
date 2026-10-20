@@ -3,9 +3,48 @@
 #include <stdlib.h>
 #include <time.h>
 #include <locale.h>
+#include <errno.h>
+#include <limits.h>
+#include <ctype.h>
 
 #define TAMANHO 10
 #define MAX_GERACOES 100
+#define TAMANHO_ENTRADA 100
+
+int lerInteiro(const char *mensagem, int *valor) {
+    char entrada[TAMANHO_ENTRADA];
+    char *fim;
+    long numero;
+
+    while (1) {
+        printf("%s", mensagem);
+
+        if (fgets(entrada, sizeof(entrada), stdin) == NULL) {
+            return 0;
+        }
+
+        errno = 0;
+        numero = strtol(entrada, &fim, 10);
+
+        if (fim == entrada || errno == ERANGE ||
+            numero < INT_MIN || numero > INT_MAX) {
+            printf("Entrada invalida. Digite um numero inteiro.\n");
+            continue;
+        }
+
+        while (isspace((unsigned char)*fim)) {
+            fim++;
+        }
+
+        if (*fim != '\0') {
+            printf("Entrada invalida. Digite somente um numero.\n");
+            continue;
+        }
+
+        *valor = (int) numero;
+        return 1;
+    }
+}
 
 void exibirMenuInicial(void) {
     printf("\n========================================\n");
@@ -13,7 +52,7 @@ void exibirMenuInicial(void) {
     printf("========================================\n");
     printf("\n[1] Iniciar jogo\n");
     printf("[0] Sair\n");
-    printf("\nEscolha uma opcao: ");
+    printf("\n");
 }
 
 void inicializarTabuleiro(int tabuleiro[TAMANHO][TAMANHO]) {
@@ -114,12 +153,14 @@ void executarJogo(void) {
     int proxima[TAMANHO][TAMANHO];
     int historico[MAX_GERACOES + 1][TAMANHO][TAMANHO];
 
-    printf("\nQuantas geracoes deseja simular (1 a %d)? ",
-           MAX_GERACOES);
+    if (!lerInteiro("\nQuantas geracoes deseja simular (1 a 100)? ",
+                    &geracoes)) {
+        return;
+    }
 
-    if (scanf("%d", &geracoes) != 1 ||
-        geracoes < 1 || geracoes > MAX_GERACOES) {
-        printf("Quantidade de geracoes invalida.\n");
+    if (geracoes < 1 || geracoes > MAX_GERACOES) {
+        printf("Quantidade invalida. Escolha entre 1 e %d.\n",
+               MAX_GERACOES);
         return;
     }
 
@@ -146,23 +187,23 @@ int main(void) {
 
     int opcao;
 
-    do {
+    while (1) {
         exibirMenuInicial();
 
-        if (scanf("%d", &opcao) != 1) {
-            printf("Entrada invalida. Encerrando o programa.\n");
-            return 1;
+        if (!lerInteiro("Escolha uma opcao: ", &opcao)) {
+            printf("\nEncerrando o programa.\n");
+            break;
         }
 
         if (opcao == 1) {
             executarJogo();
         } else if (opcao == 0) {
             printf("\nObrigado por jogar!\n");
+            break;
         } else {
             printf("\nOpcao invalida. Escolha 1 ou 0.\n");
         }
-
-    } while (opcao != 0);
+    }
 
     return 0;
 }
