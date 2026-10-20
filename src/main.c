@@ -1,209 +1,194 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <locale.h>
-#include <errno.h>
-#include <limits.h>
-#include <ctype.h>
+#include <unistd.h> // Para a função sleep()
+#include<locale.h>
 
 #define TAMANHO 10
-#define MAX_GERACOES 100
-#define TAMANHO_ENTRADA 100
 
-int lerInteiro(const char *mensagem, int *valor) {
-    char entrada[TAMANHO_ENTRADA];
-    char *fim;
-    long numero;
+// Fução para limpar a tela
+void limparTela() {
 
-    while (1) {
-        printf("%s", mensagem);
+        system("cls");
 
-        if (fgets(entrada, sizeof(entrada), stdin) == NULL) {
-            return 0;
-        }
+                }
 
-        errno = 0;
-        numero = strtol(entrada, &fim, 10);
-
-        if (fim == entrada || errno == ERANGE ||
-            numero < INT_MIN || numero > INT_MAX) {
-            printf("Entrada invalida. Digite um numero inteiro.\n");
-            continue;
-        }
-
-        while (isspace((unsigned char)*fim)) {
-            fim++;
-        }
-
-        if (*fim != '\0') {
-            printf("Entrada invalida. Digite somente um numero.\n");
-            continue;
-        }
-
-        *valor = (int) numero;
-        return 1;
-    }
-}
-
-void exibirMenuInicial(void) {
-    printf("\n========================================\n");
-    printf("       JOGO DA VIDA DE CONWAY\n");
-    printf("========================================\n");
-    printf("\n[1] Iniciar jogo\n");
-    printf("[0] Sair\n");
-    printf("\n");
-}
-
+// Fução para inicializar o tabuleiro com células vivas e mortas aleatórias
 void inicializarTabuleiro(int tabuleiro[TAMANHO][TAMANHO]) {
     for (int i = 0; i < TAMANHO; i++) {
         for (int j = 0; j < TAMANHO; j++) {
-            tabuleiro[i][j] = rand() % 2;
+            tabuleiro[i][j] = rand() % 2; // 0 ou 1 aleatório
         }
     }
 }
 
-void imprimirTabuleiro(int tabuleiro[TAMANHO][TAMANHO],
-                       int geracao) {
-    printf("\n=== GERACAO %d ===\n\n", geracao);
-
+void contarCelulas(int tabuleiro[TAMANHO][TAMANHO], int *vivas, int *mortas) {
+    *vivas = 0;
+    *mortas = 0;
     for (int i = 0; i < TAMANHO; i++) {
         for (int j = 0; j < TAMANHO; j++) {
-            printf("%c ", tabuleiro[i][j] ? 'V' : '-');
+            if (tabuleiro[i][j] == 1)
+                (*vivas)++;
+            else
+                (*mortas)++;
+        }
+    }
+}
+
+// Fução para imprimir o tabuleiro
+void imprimirTabuleiro(int tabuleiro[TAMANHO][TAMANHO], int geracao) {
+    printf("\n=== GERACAO %d ===\n\n", geracao);
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            printf("%c ", tabuleiro[i][j] ? 'V' : '-'); // Usando V para vivo e - para morto
         }
         printf("\n");
     }
 }
 
-int contarVizinhos(int tabuleiro[TAMANHO][TAMANHO],
-                   int linha, int coluna) {
-    int vivos = 0;
+int historico[100][TAMANHO][TAMANHO];
 
-    for (int i = linha - 1; i <= linha + 1; i++) {
-        for (int j = coluna - 1; j <= coluna + 1; j++) {
-            if (i == linha && j == coluna) {
-                continue;
-            }
 
-            if (i >= 0 && i < TAMANHO &&
-                j >= 0 && j < TAMANHO) {
-                vivos += tabuleiro[i][j];
+// Fução para contar os vizinhos vivos de uma célula
+int contarVizinhos(int tabuleiro[TAMANHO][TAMANHO], int linha, int coluna) {
+    int vizinhos = 0;
+
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0) continue; // Ignora a própria célula
+
+            int vizinhoLinha = linha + i;
+            int vizinhoColuna = coluna + j;
+
+            // Verifica se o vizinho está dentro dos limites do tabuleiro
+            if (vizinhoLinha >= 0 && vizinhoLinha < TAMANHO &&
+                vizinhoColuna >= 0 && vizinhoColuna < TAMANHO) {
+                vizinhos += tabuleiro[vizinhoLinha][vizinhoColuna];
             }
         }
     }
 
-    return vivos;
+    return vizinhos;
 }
 
-void simularGeracao(int atual[TAMANHO][TAMANHO],
-                    int proxima[TAMANHO][TAMANHO]) {
+// Fução para simular uma geração
+void simularGeracao(int tabuleiroAtual[TAMANHO][TAMANHO], int tabuleiroProximo[TAMANHO][TAMANHO]) {
     for (int i = 0; i < TAMANHO; i++) {
         for (int j = 0; j < TAMANHO; j++) {
-            int vizinhos = contarVizinhos(atual, i, j);
+            int vizinhos = contarVizinhos(tabuleiroAtual, i, j);
 
-            if (atual[i][j] == 1) {
-                proxima[i][j] =
-                    (vizinhos == 2 || vizinhos == 3) ? 1 : 0;
+            // Aplica as regras do Jogo da Vida
+            if (tabuleiroAtual[i][j] == 1) {
+                // Célula viva
+                if (vizinhos == 2 || vizinhos == 3) {
+                    tabuleiroProximo[i][j] = 1; // Sobrevive
+                } else {
+                    tabuleiroProximo[i][j] = 0; // Morre
+                }
             } else {
-                proxima[i][j] = (vizinhos == 3) ? 1 : 0;
+                // Célula morta
+                if (vizinhos == 3) {
+                    tabuleiroProximo[i][j] = 1; // Nasce
+                } else {
+                    tabuleiroProximo[i][j] = 0; // Permanece morta
+                }
             }
         }
     }
 }
 
-void copiarTabuleiro(int origem[TAMANHO][TAMANHO],
-                     int destino[TAMANHO][TAMANHO]) {
+// Fução para copiar um tabuleiro para outro
+void copiarTabuleiro(int origem[TAMANHO][TAMANHO], int destino[TAMANHO][TAMANHO]) {
     for (int i = 0; i < TAMANHO; i++) {
         for (int j = 0; j < TAMANHO; j++) {
             destino[i][j] = origem[i][j];
         }
     }
 }
+int main() {
 
-void contarCelulas(int tabuleiro[TAMANHO][TAMANHO],
-                   int *vivas, int *mortas) {
-    *vivas = 0;
-    *mortas = 0;
+    setlocale(LC_ALL,"portuguese");
 
-    for (int i = 0; i < TAMANHO; i++) {
-        for (int j = 0; j < TAMANHO; j++) {
-            if (tabuleiro[i][j] == 1) {
-                (*vivas)++;
-            } else {
-                (*mortas)++;
-            }
-        }
-    }
-}
-
-void exibirEstatisticas(int tabuleiro[TAMANHO][TAMANHO],
-                        int geracao) {
-    int vivas, mortas;
-
-    contarCelulas(tabuleiro, &vivas, &mortas);
-
-    printf("\nEstatisticas da geracao %d:\n", geracao);
-    printf("Celulas vivas: %d\n", vivas);
-    printf("Celulas mortas: %d\n", mortas);
-}
-
-void executarJogo(void) {
+    int tabuleiroAtual[TAMANHO][TAMANHO];
+    int tabuleiroProximo[TAMANHO][TAMANHO];
     int geracoes;
-    int tabuleiro[TAMANHO][TAMANHO];
-    int proxima[TAMANHO][TAMANHO];
-    int historico[MAX_GERACOES + 1][TAMANHO][TAMANHO];
+    int c, j;
 
-    if (!lerInteiro("\nQuantas geracoes deseja simular (1 a 100)? ",
-                    &geracoes)) {
-        return;
+    do{
+    system("cls");
+    printf("\n\t\t\t\t--SEJA BEM VINDO AO JOGO DAS CÉLULAS!!!!--");
+    printf("\n\n\n\t\t\t\t\t\t |");
+    printf("\n\t\t\t\t\t\t |");
+    printf("\n\n\n\t -Como funciona o jogo??");
+    printf("\n\n\t\t-->Este jogo foi criado baseado no clássico Jogo da Vida de Conway. Esse mini jogo é um autômato celular, um sistema dinâmico discreto, que simula a evolução de um sistema de células vivas e mortas em uma grade bidimensional. Cada célula pode estar viva ou morta e seu estado na próxima geração é determinado pelas células vizinhas, seguindo um conjunto de regras simples. \n\n\n");
+    printf("\n\t\t\t\t\t\t |");
+    printf("\n\t\t\t\t\t\t |");
+    printf("\n\n\n\t -Você deseja jogar???");
+    printf("\n\n\t\t -->Digite (1) para começar ou algo diferente de 1 para sair: ");
+    scanf("%d",&c);
+    if(c!=1)
+    {
+        system("cls");
+        printf("\n\n\t\n\n\n \t\t\t\t\t\tOBRIGADO!!!");
+    printf("\n\n\t\n\n\n \t\t ---->Reinicie o programa caso você queira jogar mais tarde!!\n\n\n\n\n\n\n");
+        exit(0);
     }
 
-    if (geracoes < 1 || geracoes > MAX_GERACOES) {
-        printf("Quantidade invalida. Escolha entre 1 e %d.\n",
-               MAX_GERACOES);
-        return;
-    }
+    // Inicializa o gerador de números aleatórios
+    srand(time(NULL));
 
-    inicializarTabuleiro(tabuleiro);
-    copiarTabuleiro(tabuleiro, historico[0]);
+    // Inicializa o tabuleiro
+    inicializarTabuleiro(tabuleiroAtual);
 
+    // Pede ao usuário o número de gerações
+    system("cls");
+    printf("\n\n\n\t\tDigite o número de gerações para serem simuladas: ");
+    scanf("%d", &geracoes);
+
+    // Imprime a geraçâo inicial
+    limparTela();
+    imprimirTabuleiro(tabuleiroAtual, 0);
+    sleep(2); // Pausa por 2 segundo
+
+    // Simula cada geração
     for (int g = 1; g <= geracoes; g++) {
-        simularGeracao(tabuleiro, proxima);
-        copiarTabuleiro(proxima, tabuleiro);
-        copiarTabuleiro(tabuleiro, historico[g]);
-    }
+        simularGeracao(tabuleiroAtual, tabuleiroProximo);
+        copiarTabuleiro(tabuleiroProximo, tabuleiroAtual);
+        copiarTabuleiro(tabuleiroAtual, historico[g]);
 
-    printf("\n========== HISTORICO ==========\n");
-
+        limparTela();
+        imprimirTabuleiro(tabuleiroAtual, g);
+        sleep(2); // Pausa por 2 segundo entre gerações
+        }
+        printf("\n\n\nPressione qualquer tecla para seguir");
+    getch();
+        system ("cls");
+        printf("\t\t\t\t\t\t=== TODAS AS GERAÇÕES ===\n\n\n");
     for (int g = 0; g <= geracoes; g++) {
-        imprimirTabuleiro(historico[g], g);
-        exibirEstatisticas(historico[g], g);
-    }
-}
-
-int main(void) {
-    setlocale(LC_ALL, "");
-    srand((unsigned int) time(NULL));
-
-    int opcao;
-
-    while (1) {
-        exibirMenuInicial();
-
-        if (!lerInteiro("Escolha uma opcao: ", &opcao)) {
-            printf("\nEncerrando o programa.\n");
-            break;
+    imprimirTabuleiro(historico[g], g);
         }
+    int vivas, mortas;
+    contarCelulas(tabuleiroAtual, &vivas, &mortas);
 
-        if (opcao == 1) {
-            executarJogo();
-        } else if (opcao == 0) {
-            printf("\nObrigado por jogar!\n");
-            break;
-        } else {
-            printf("\nOpcao invalida. Escolha 1 ou 0.\n");
-        }
-    }
+    printf("\n\nResumo Final da última Geração:");
+    printf("\nCélulas vivas: %d", vivas);
+    printf("\nCélulas mortas: %d\n", mortas);
+
+    printf("\n\n\nPressione qualquer tecla para seguir");
+    getch();
+    system("cls");
+    printf("\n\n\n\n\n\t\t\t\t\t\tFim de jogo!!");
+    printf("\n\n\n\n\nPressione qualquer tecla para seguir");
+    getch();
+    system("cls");
+    printf("\n\n\n\t\t\tDeseja jogar novamente?\n\n");
+    printf("\n\t\t\tDigite 1 para jogar novamente ou outro número para encerrar: ",j);
+    scanf("%d",&j);
+    system("cls");
+
+    }while(j==1);
+
+    printf("\n\n\n\t\t\tObrigado por jogar!\n\n\n");
 
     return 0;
 }
