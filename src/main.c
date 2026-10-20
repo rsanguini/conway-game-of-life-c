@@ -5,6 +5,7 @@
 #include <locale.h>
 
 #define TAMANHO 10
+#define MAX_GERACOES 100
 
 void exibirMenuInicial(void) {
     printf("\n========================================\n");
@@ -71,32 +72,97 @@ void simularGeracao(int atual[TAMANHO][TAMANHO],
     }
 }
 
+void copiarTabuleiro(int origem[TAMANHO][TAMANHO],
+                     int destino[TAMANHO][TAMANHO]) {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            destino[i][j] = origem[i][j];
+        }
+    }
+}
+
+void contarCelulas(int tabuleiro[TAMANHO][TAMANHO],
+                   int *vivas, int *mortas) {
+    *vivas = 0;
+    *mortas = 0;
+
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            if (tabuleiro[i][j] == 1) {
+                (*vivas)++;
+            } else {
+                (*mortas)++;
+            }
+        }
+    }
+}
+
+void exibirEstatisticas(int tabuleiro[TAMANHO][TAMANHO],
+                        int geracao) {
+    int vivas, mortas;
+
+    contarCelulas(tabuleiro, &vivas, &mortas);
+
+    printf("\nEstatisticas da geracao %d:\n", geracao);
+    printf("Celulas vivas: %d\n", vivas);
+    printf("Celulas mortas: %d\n", mortas);
+}
+
+void executarJogo(void) {
+    int geracoes;
+    int tabuleiro[TAMANHO][TAMANHO];
+    int proxima[TAMANHO][TAMANHO];
+    int historico[MAX_GERACOES + 1][TAMANHO][TAMANHO];
+
+    printf("\nQuantas geracoes deseja simular (1 a %d)? ",
+           MAX_GERACOES);
+
+    if (scanf("%d", &geracoes) != 1 ||
+        geracoes < 1 || geracoes > MAX_GERACOES) {
+        printf("Quantidade de geracoes invalida.\n");
+        return;
+    }
+
+    inicializarTabuleiro(tabuleiro);
+    copiarTabuleiro(tabuleiro, historico[0]);
+
+    for (int g = 1; g <= geracoes; g++) {
+        simularGeracao(tabuleiro, proxima);
+        copiarTabuleiro(proxima, tabuleiro);
+        copiarTabuleiro(tabuleiro, historico[g]);
+    }
+
+    printf("\n========== HISTORICO ==========\n");
+
+    for (int g = 0; g <= geracoes; g++) {
+        imprimirTabuleiro(historico[g], g);
+        exibirEstatisticas(historico[g], g);
+    }
+}
+
 int main(void) {
     setlocale(LC_ALL, "");
     srand((unsigned int) time(NULL));
 
     int opcao;
-    int tabuleiro[TAMANHO][TAMANHO];
-    int proxima[TAMANHO][TAMANHO];
 
-    exibirMenuInicial();
+    do {
+        exibirMenuInicial();
 
-    if (scanf("%d", &opcao) != 1) {
-        printf("Entrada invalida.\n");
-        return 1;
-    }
+        if (scanf("%d", &opcao) != 1) {
+            printf("Entrada invalida. Encerrando o programa.\n");
+            return 1;
+        }
 
-    if (opcao == 1) {
-        inicializarTabuleiro(tabuleiro);
-        imprimirTabuleiro(tabuleiro, 0);
+        if (opcao == 1) {
+            executarJogo();
+        } else if (opcao == 0) {
+            printf("\nObrigado por jogar!\n");
+        } else {
+            printf("\nOpcao invalida. Escolha 1 ou 0.\n");
+        }
 
-        simularGeracao(tabuleiro, proxima);
-        imprimirTabuleiro(proxima, 1);
-    } else if (opcao == 0) {
-        printf("Obrigado por jogar!\n");
-    } else {
-        printf("Opcao invalida.\n");
-    }
+    } while (opcao != 0);
 
     return 0;
 }
